@@ -7,7 +7,7 @@ const chat = async (prompt) => {
     max_tokens: 1024,
     temperature: 0.8,
   });
-  return chatResponse.data.choices[0];
+  return chatResponse.data.choices[0].text;
 };
 
 module.exports = { chat };
