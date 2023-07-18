@@ -8,7 +8,7 @@ const { chat } = require("../utils/chat");
 const router = express.Router();
 const upload = multer();
 
-router.post("/", upload.any("file"), async (req, res) => {
+router.post("/api/transcribe", upload.any("file"), async (req, res) => {
   try {
     const file = req.files[0];
     const buffer = file.buffer;
@@ -18,23 +18,35 @@ router.post("/", upload.any("file"), async (req, res) => {
     fs.writeFileSync("output.m4a", convertedBuffer);
 
     const transcript = await transcribe("output.m4a");
-    const chatRes = await chat(transcript);
     console.log("Transcript: ", transcript);
-    console.log("Chat: ", chatRes);
-    if (transcript && chatRes) {
-      return res.send({ transcript, chat: chatRes });
+
+    if (transcript) {
+      return res.send({ transcript });
     }
+  } catch (e) {
+    console.error("Error:", e);
     return res.send({
-      message: `${!transcript && "failed to fetch transcription "}${
-        !chatRes && "failed to fetch chat response"
-      } `,
+      message: "failed to fetch transcription",
     });
-  } catch (error) {
-    console.error("Error:", error);
   }
 });
 
-router.get("/text-to-speech", async (req, res, next) => {
+router.post("/api/ask", async (req, res, next) => {
+  const prompt = req.body.prompt;
+
+  try {
+    const aiResponse = await chat(prompt);
+    if (aiResponse) {
+      return res.send({ aiResponse });
+    }
+  } catch (e) {
+    return res.send({
+      message: "failed to fetch ai response",
+    });
+  }
+});
+
+router.get("/api/text-to-speech", async (req, res, next) => {
   const { key, region, phrase, file } = req.query;
 
   if (!key || !region || !phrase) res.status(404).send("Invalid query string");
